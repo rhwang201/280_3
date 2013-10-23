@@ -18,7 +18,7 @@ for f_i = 1:n_files
             patch = im(patch_jump*(i-1)+1:patch_jump*(i-1)+5, patch_jump*(j-1)+1:patch_jump*(j-1)+5);
             patch = (patch - mean2(patch)) / norm(patch, 1);
 
-            patches(num_patches*num_patches*(f_i-1)+num_patches*(i-1)+j, :) = patch(:);
+            patches(num_patches*num_patches*(f_i-1)+num_patches*(i-1)+j, :) = patch(:)';
         end
     end
 end

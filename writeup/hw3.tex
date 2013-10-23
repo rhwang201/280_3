@@ -14,8 +14,37 @@
 
 \section{Texture Recognition}
 \subsection{Training}
-To compute textons, we use the code in Figure \ref{texton_train}. The resulting
-textons are shown in Figure \ref{textons}.
+To compute textons, we use the code in Appendix Figure \ref{texton_train}. A
+visualization of the 25 textons is shown in Figure \ref{texton_viz}. We did
+not use every 5x5 patch; we subsampled for performance reasons. We will see
+this turned out fine for our limited test set.
+
+\begin{figure}[h!]
+  \caption{Visualization of 25 Textons}
+  \label{texton_viz}
+  \centering
+    \includegraphics[width=0.6\linewidth]{../textons/textons.jpg}
+\end{figure}
+
+\subsection{Classification}
+We implemented 1NN shown in Appendix Figure \ref{texton_classify}. This was
+very successful. Using the script shown in Appendix Figure \ref{texton_script},
+we produce the predictions shown in Figure \ref{texton_predictions}.
+
+\begin{figure}[h!]
+  \caption{Visualization of 25 Textons}
+  \label{texton_viz}
+  \centering
+    \includegraphics[width=0.6\linewidth]{../textons/textons.jpg}
+\end{figure}
+
+There was only one error: 12\_beach\_sand.tiff was predicted to have the texture
+of herringbone\_weave.
+
+\section{Block Matching}
+
+
+\section{Appendix}
 
 \begin{figure}[h!]
   \caption{Generating Images}
@@ -64,15 +93,79 @@ textons are shown in Figure \ref{textons}.
     \end{lstlisting}
 \end{figure}
 
-%\begin{figure}[h!]
-%  \caption{3D Point Cloud for Library}
-%  \label{3d_lib}
-%  \centering
-%    \includegraphics[width=0.6\linewidth]{../img/library_camera.jpg}
-%\end{figure}
+\begin{figure}[h!]
+  \caption{Texture 1-Nearest Neighbor Classifier}
+  \label{texton_classify}
+  \centering
+    \begin{lstlisting}
+      function [f] = classify(im_name, train_hists, textons, file_list)
 
-\subsection{Classification}
+      im = im2double(imread(im_name));
 
-\section{Block Matching}
+      if nargin < 4
+          [train_hists, textons, file_list] = compute_textons(25);
+      end
+      [n_textures, k] = size(train_hists);
+
+
+      hist = create_histogram(im, textons);
+
+
+      % Find nearest neighbor, using intersection kernel
+      min_dist = inf;
+      min_text_i = -1;
+
+      for texture_i = 1:n_textures
+          text_hist = train_hists(texture_i, :);
+          dist = 0;
+
+          for bin_i = 1:k
+              dist = dist + min(hist(bin_i), text_hist(bin_i));
+          end
+
+          dist = 1 - dist;
+
+          if dist < min_dist
+              min_dist = dist;
+              min_text_i = texture_i;
+          end
+      end
+
+      f = figure(1);
+      subplot(1,2,1);
+      imshow(im);
+
+      subplot(1,2,2);
+      matched = imread(sprintf('texture_train/%s',file_list{min_text_i}));
+      imshow(matched);
+
+      disp(sprintf('%s predicted to be %s', im_name, file_list{min_text_i}));
+    \end{lstlisting}
+\end{figure}
+
+\begin{figure}[h!]
+  \caption{Generating all predictions}
+  \label{texton_script}
+  \centering
+    \begin{lstlisting}
+      [train_hists, textons, train_file_list] = compute_textons(25);
+
+      test_dir = 'texture_test';
+
+      imgs = dir(sprintf('%s/*.tiff', test_dir));
+      test_file_list = {imgs.name};
+      [~, n_files] = size(test_file_list);
+
+      for test_f_i = 1:n_files
+          im_name = test_file_list{test_f_i};
+          test_im_name = sprintf('%s/%s', test_dir, im_name);
+
+          fig = classify(test_im_name, train_hists, textons, train_file_list);
+
+          result_name = sprintf('classify_results/%s.jpg', im_name);
+          saveas(fig, result_name);
+      end
+    \end{lstlisting}
+\end{figure}
 
 \end{document}

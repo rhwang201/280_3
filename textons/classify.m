@@ -1,4 +1,4 @@
-function [f] = classify(im_name, train_hists, textons, file_list)
+function [pred] = classify(im_name, train_hists, textons, file_list)
 
 im = im2double(imread(im_name));
 
@@ -38,3 +38,6 @@ imshow(im);
 subplot(1,2,2);
 matched = imread(sprintf('texture_train/%s',file_list{min_text_i}));
 imshow(matched);
+
+pred = file_list{min_text_i};
+disp(sprintf('%s predicted to be %s', im_name, pred));
